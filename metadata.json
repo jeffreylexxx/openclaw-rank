@@ -1,0 +1,6 @@
+{
+  "name": "OpenClaw Review & Ranking System",
+  "description": "Comprehensive evaluation and ranking system for OpenClaw versions since 2026.3.28, featuring automated sentiment analysis, trend tracking, and community voting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["AI-driven ranking", "Community feedback loop", "Real-time version tracking"]
+}

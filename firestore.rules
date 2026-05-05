@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_.\\-]+$');
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // Collection: openclaw_versions
+    // Public can read rankings and increment votes.
+    match /openclaw_versions/{versionId} {
+      allow get: if isValidId(versionId);
+      allow list: if true; // Publicly accessible list
+      
+      allow create: if isValidId(versionId)
+        && incoming().keys().hasAll(['voteRecommend', 'voteNotRecommend'])
+        && incoming().keys().size() == 2
+        && incoming().voteRecommend is int
+        && incoming().voteNotRecommend is int
+        && incoming().voteRecommend >= 0
+        && incoming().voteNotRecommend >= 0;
+
+      allow update: if isValidId(versionId)
+        && (
+          // Action: Increment Recommend
+          (incoming().diff(existing()).affectedKeys().hasOnly(['voteRecommend']) 
+           && incoming().voteRecommend == existing().voteRecommend + 1)
+          ||
+          // Action: Increment Not Recommend
+          (incoming().diff(existing()).affectedKeys().hasOnly(['voteNotRecommend']) 
+           && incoming().voteNotRecommend == existing().voteNotRecommend + 1)
+        );
+    }
+
+    // Collection: metadata (ranking_history)
+    match /metadata/ranking_history {
+      allow get: if true;
+      allow create, update: if true; // In a real app, this should be admin-only. 
+      // For this specific requester who wants a persistent client-side state:
+    }
+  }
+}

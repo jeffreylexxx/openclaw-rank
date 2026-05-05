@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "VersionFeedback": {
+      "title": "Version Feedback and Votes",
+      "description": "Stores community recommendation votes for OpenClaw versions.",
+      "type": "object",
+      "properties": {
+        "voteRecommend": { "type": "integer", "description": "Number of manual recommendation clicks." },
+        "voteNotRecommend": { "type": "integer", "description": "Number of manual not-recommendation clicks." }
+      },
+      "required": ["voteRecommend", "voteNotRecommend"]
+    },
+    "RankingHistory": {
+      "title": "Ranking History",
+      "description": "Stores the last calculated ranks for trend tracking.",
+      "type": "object",
+      "properties": {
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "version": { "type": "string" },
+              "rank": { "type": "integer" }
+            }
+          }
+        },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "/openclaw_versions/{versionId}": {
+      "schema": "VersionFeedback",
+      "description": "Community votes per version."
+    },
+    "/metadata/ranking_history": {
+      "schema": "RankingHistory",
+      "description": "Historical ranking data for trend comparison."
+    }
+  }
+}
