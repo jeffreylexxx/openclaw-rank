@@ -53,7 +53,7 @@ export default function App() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-zinc-800 pb-6 gap-4">
         <div>
           <h1 className="text-4xl md:text-5xl font-extralight tracking-tight text-white mb-2">
-            OPENCLAW <span className="text-zinc-600 font-serif-italic">Evidence Index</span>
+            OPENCLAW <span className="text-zinc-600 font-serif-italic">Version Index</span>
           </h1>
           <p className="text-[10px] md:text-[11px] uppercase tracking-[0.3em] text-zinc-500 font-bold">
             Public GitHub Issues, Release Reactions, and npm Registry Signals
