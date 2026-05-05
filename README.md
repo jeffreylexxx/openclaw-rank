@@ -12,11 +12,11 @@ The score combines release-note evidence, GitHub issue or pull-request reference
 
 The recommendation tier is based on the score:
 
-- Strongly Recommended: 80 and above
-- Recommended: 65 to 79.99
-- Neutral: 50 to 64.99
-- Not Recommended: 30 to 49.99
-- Disaster: below 30
+- Strongly Recommended: 90 and above
+- Recommended: 80 to 89.99
+- Neutral: 70 to 79.99
+- Not Recommended: 40 to 69.99
+- Disaster: below 40
 
 ## Expanded Version Details
 
