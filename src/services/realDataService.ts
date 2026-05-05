@@ -7,6 +7,9 @@ const SINCE_DATE = "2026-03-28T00:00:00Z";
 const RELEASES_ENDPOINT = "/api/github/releases";
 const NPM_ENDPOINT = "/api/npm/openclaw";
 const ISSUES_ENDPOINT = "/api/github/issues";
+const DIRECT_RELEASES_ENDPOINT = `https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=100`;
+const DIRECT_NPM_ENDPOINT = "https://registry.npmjs.org/openclaw";
+const DIRECT_ISSUES_ENDPOINT = `https://api.github.com/repos/${OWNER}/${REPO}/issues`;
 
 interface GitHubRelease {
   tag_name: string;
@@ -47,7 +50,8 @@ interface GitHubIssue {
 }
 
 export async function fetchAndAnalyzeVersions(currentVersions: VersionInfo[]): Promise<VersionInfo[]> {
-  const [releases, npmRegistry] = await Promise.all([fetchReleases(), fetchNpmRegistry()]);
+  const npmRegistry = await fetchNpmRegistry();
+  const releases = await fetchReleases(npmRegistry);
   const publicIssues = await fetchPublicIssues();
   const formalReleases = releases
     .filter((release) => isFormalRelease(release))
@@ -87,16 +91,18 @@ export async function fetchAndAnalyzeVersions(currentVersions: VersionInfo[]): P
     });
 }
 
-async function fetchReleases(): Promise<GitHubRelease[]> {
-  const releases = await fetchJson<GitHubRelease[] | null>(RELEASES_ENDPOINT, null);
-  if (!releases) {
-    throw new Error("GitHub releases could not be loaded through the local proxy cache. Restart the local server or set GITHUB_TOKEN in .env.local.");
-  }
-  return releases;
+async function fetchReleases(npmRegistry: NpmRegistry): Promise<GitHubRelease[]> {
+  const releases = await fetchJson<GitHubRelease[] | null>(RELEASES_ENDPOINT, null, [DIRECT_RELEASES_ENDPOINT]);
+  if (releases?.length) return releases;
+
+  const npmFallback = buildNpmReleaseFallback(npmRegistry);
+  if (npmFallback.length) return npmFallback;
+
+  throw new Error("Release data could not be loaded from the local proxy, GitHub API, or npm registry.");
 }
 
 async function fetchNpmRegistry(): Promise<NpmRegistry> {
-  return fetchJson<NpmRegistry>(NPM_ENDPOINT, {});
+  return fetchJson<NpmRegistry>(NPM_ENDPOINT, {}, [DIRECT_NPM_ENDPOINT]);
 }
 
 async function fetchPublicIssues(): Promise<GitHubIssue[]> {
@@ -104,8 +110,10 @@ async function fetchPublicIssues(): Promise<GitHubIssue[]> {
   const sinceTime = new Date(SINCE_DATE).getTime();
 
   for (let page = 1; page <= 6; page += 1) {
-    const url = `${ISSUES_ENDPOINT}?state=all&sort=created&direction=desc&per_page=100&page=${page}`;
-    const pageItems = await fetchJson<GitHubIssue[]>(url, []);
+    const query = `state=all&sort=created&direction=desc&per_page=100&page=${page}`;
+    const url = `${ISSUES_ENDPOINT}?${query}`;
+    const directUrl = `${DIRECT_ISSUES_ENDPOINT}?${query}`;
+    const pageItems = await fetchJson<GitHubIssue[]>(url, [], [directUrl]);
     if (pageItems.length === 0) break;
 
     const issueItems = pageItems.filter((issue) => !issue.pull_request);
@@ -118,19 +126,46 @@ async function fetchPublicIssues(): Promise<GitHubIssue[]> {
   return issues;
 }
 
-async function fetchJson<T>(url: string, fallback: T): Promise<T> {
+async function fetchJson<T>(url: string, fallback: T, alternates: string[] = []): Promise<T> {
+  for (const candidate of [url, ...alternates]) {
+    const result = await tryFetchJson<T>(candidate);
+    if (result.ok) return result.data;
+  }
+  return fallback;
+}
+
+async function tryFetchJson<T>(url: string): Promise<{ ok: true; data: T } | { ok: false }> {
   try {
     const response = await fetch(resolveFetchUrl(url), {
       headers: {
         Accept: "application/vnd.github+json, application/json",
       },
     });
-    if (!response.ok) return fallback;
-    return (await response.json()) as T;
+    if (!response.ok) return { ok: false };
+    return { ok: true, data: (await response.json()) as T };
   } catch (error) {
     console.warn(`Unable to fetch ${url}`, error);
-    return fallback;
+    return { ok: false };
   }
+}
+
+function buildNpmReleaseFallback(npmRegistry: NpmRegistry): GitHubRelease[] {
+  const versions = Object.keys(npmRegistry.time || {})
+    .filter((version) => /^\d{4}\.\d+\.\d+(?:-\d+)?$/.test(version))
+    .filter((version) => compareVersions(version, SINCE_VERSION) >= 0)
+    .sort((a, b) => compareVersions(b, a));
+
+  return versions.map((version) => ({
+    tag_name: `v${version}`,
+    name: `openclaw ${version}`,
+    html_url: `https://www.npmjs.com/package/openclaw/v/${version}`,
+    prerelease: /(?:alpha|beta|rc)/i.test(version),
+    published_at: npmRegistry.time?.[version] || null,
+    created_at: npmRegistry.time?.[version] || new Date().toISOString(),
+    body: "OpenClaw npm release metadata. GitHub release details unavailable in static mode.",
+    reactions: { total_count: 0, "+1": 0, "-1": 0, hooray: 0, heart: 0, rocket: 0, confused: 0, eyes: 0 },
+    mentions_count: 1,
+  }));
 }
 
 function resolveFetchUrl(url: string) {

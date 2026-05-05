@@ -59,3 +59,11 @@ Preview the production build with the same proxy and cache:
 ```bash
 npm run preview
 ```
+
+## Deploy To GitHub Pages
+
+GitHub Pages cannot run the local `server.mjs` proxy because Pages is static hosting. For that reason, the deployed site uses browser-side network fallback: it first tries the local `/api/*` paths when running locally, then falls back to GitHub and npm public APIs when hosted on GitHub Pages.
+
+The repository includes `.github/workflows/pages.yml`. Push the project to GitHub, then open the repository settings and set Pages to deploy from GitHub Actions. The workflow installs dependencies, builds the Vite app, and publishes the `dist` folder.
+
+Do not publish the raw source folder directly as the Pages site. The source `index.html` points at `/src/main.tsx`, which browsers cannot run without Vite's build step.
