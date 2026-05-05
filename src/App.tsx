@@ -177,13 +177,13 @@ export default function App() {
                           const index = v.score;
                           let tier = { label: 'Disaster', color: 'text-rose-600', bg: 'bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.4)]' };
                           
-                          if (index >= 90) {
+                          if (index >= 80) {
                             tier = { label: 'Strongly Recommended', color: 'text-emerald-400', bg: 'bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.5)]' };
-                          } else if (index >= 80) {
+                          } else if (index >= 65) {
                             tier = { label: 'Recommended', color: 'text-teal-400', bg: 'bg-teal-500/80 shadow-[0_0_10px_rgba(20,184,166,0.3)]' };
-                          } else if (index >= 70) {
+                          } else if (index >= 50) {
                             tier = { label: 'Neutral', color: 'text-zinc-500', bg: 'bg-zinc-600' };
-                          } else if (index >= 40) {
+                          } else if (index >= 30) {
                             tier = { label: 'Not Recommended', color: 'text-orange-500', bg: 'bg-orange-500/80' };
                           }
 
