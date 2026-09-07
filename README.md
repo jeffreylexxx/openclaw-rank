@@ -2,6 +2,10 @@
 
 OpenClaw Evidence Index is a React and Vite web app for comparing formal OpenClaw releases by public feedback evidence. It is designed to replace placeholder rankings with data that can be traced back to public network sources, including GitHub releases, GitHub issues, release reactions, and npm registry metadata.
 
+DEMO link:  update data while loadingpage, wait for a while
+https://jeffreylexxx.github.io/openclaw-rank/
+
+
 The app focuses on OpenClaw versions published from 2026.3.28 onward. It excludes beta, alpha, and release-candidate builds so the table compares formal releases only.
 
 ## Ranking And Scoring
